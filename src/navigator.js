@@ -52,6 +52,7 @@ $.Navigator = function( options ){
     var viewer      = options.viewer,
         _this = this,
         viewerSize,
+        contentSize,
         navigatorSize;
 
     //We may need to create a new element and id if they did not
@@ -179,9 +180,12 @@ $.Navigator = function( options ){
             this.element.style.width  = typeof ( options.width )  == "number" ? ( options.width + 'px' ) : options.width;
         } else {
             viewerSize = $.getElementSize( viewer.element );
-            this.element.style.height = Math.round( viewerSize.y * options.sizeRatio ) + 'px';
-            this.element.style.width  = Math.round( viewerSize.x * options.sizeRatio ) + 'px';
+            contentSize = viewer.viewport.contentSize.clone();
+            var navWide = viewerSize.x * options.sizeRatio;
+            this.element.style.width  = Math.round( navWide ) + 'px';
+            this.element.style.height = Math.round( navWide * contentSize.y / contentSize.x ) + 'px';
             this.oldViewerSize = viewerSize;
+            this.oldContentSize = contentSize;
         }
         navigatorSize = $.getElementSize( this.element );
         this.elementArea = navigatorSize.x * navigatorSize.y;
@@ -257,6 +261,7 @@ $.extend( $.Navigator.prototype, $.EventSource.prototype, $.Viewer.prototype, /*
     update: function( viewport ) {
 
         var viewerSize,
+            contentSize,
             newWidth,
             newHeight,
             bounds,
@@ -264,14 +269,17 @@ $.extend( $.Navigator.prototype, $.EventSource.prototype, $.Viewer.prototype, /*
             bottomright;
 
         viewerSize = $.getElementSize( this.viewer.element );
-        if ( !viewerSize.equals( this.oldViewerSize ) ) {
+
+        contentSize = this.viewer.viewport.contentSize.clone();
+        if ( !viewerSize.equals( this.oldViewerSize ) || !contentSize.equals( this.oldContentSize ) ) {
             this.oldViewerSize = viewerSize;
+            this.oldContentSize = contentSize;
             if ( this.maintainSizeRatio ) {
                 newWidth  = viewerSize.x * this.sizeRatio;
-                newHeight = viewerSize.y * this.sizeRatio;
+                newHeight = newWidth * contentSize.y / contentSize.x;
             }
             else {
-                newWidth = Math.sqrt(this.elementArea * (viewerSize.x / viewerSize.y));
+                newWidth = Math.sqrt(this.elementArea * (contentSize.x / contentSize.y));
                 newHeight = this.elementArea / newWidth;
             }
             this.element.style.width  = Math.round( newWidth ) + 'px';
